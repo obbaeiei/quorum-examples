@@ -221,6 +221,7 @@ services:
     hostname: node3
     ports:
       - "22002:8545"
+      - "24002:9545"
     volumes:
       - vol3:/qdata
       - ./examples/7nodes:/examples:ro
