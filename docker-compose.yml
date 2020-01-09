@@ -13,7 +13,7 @@ x-quorum-def:
   image: "${QUORUM_DOCKER_IMAGE:-quorumengineering/quorum:2.2.5}"
   expose:
     - "21000"
-    - "50400"
+    - "50401"
   healthcheck:
     test: ["CMD", "wget", "--spider", "--proxy", "off", "http://localhost:8545"]
     interval: 3s
@@ -31,7 +31,7 @@ x-quorum-def:
       do
         set -e
         if [ -S $${PRIVATE_CONFIG} ] && \
-          [ "I'm up!" == "$$(wget --timeout $${UDS_WAIT} -qO- --proxy off 172.16.239.10$${NODE_ID}:9000/upcheck)" ];
+          [ "I'm up!" == "$$(wget --timeout $${UDS_WAIT} -qO- --proxy off 35.187.248.210:9000/upcheck)" ];
         then break
         else
           echo "Sleep $${UDS_WAIT} seconds. Waiting for TxManager."
@@ -44,7 +44,7 @@ x-quorum-def:
       mkdir -p $${DDIR}/geth
       cp /examples/raft/nodekey$${NODE_ID} $${DDIR}/geth/nodekey
       cp /examples/keys/key$${NODE_ID} $${DDIR}/keystore/
-      cat /examples/permissioned-nodes.json | sed 's/^\(.*\)@.*\?\(.*\)raftport=5040\([0-9]\)\(.*\)$$/\1@172.16.239.1\3:21000?discport=0\&raftport=50400\4/g' > $${DDIR}/static-nodes.json
+      cat /examples/permissioned-nodes.json > $${DDIR}/static-nodes.json
       cp $${DDIR}/static-nodes.json $${DDIR}/permissioned-nodes.json
       cat $${DDIR}/static-nodes.json
       GENESIS_FILE="/examples/istanbul-genesis.json"
@@ -52,14 +52,13 @@ x-quorum-def:
         GENESIS_FILE="/examples/genesis.json"
       fi
       NETWORK_ID=$$(cat $${GENESIS_FILE} | grep chainId | awk -F " " '{print $$2}' | awk -F "," '{print $$1}')
-      GETH_ARGS_raft="--raft --raftport 50400"
+      GETH_ARGS_raft="--raft --raftport 50401"
       GETH_ARGS_istanbul="--emitcheckpoints --istanbul.blockperiod 1 --mine --minerthreads 1 --syncmode full"
       geth --datadir $${DDIR} init $${GENESIS_FILE}
       geth \
         --identity node$${NODE_ID}-${QUORUM_CONSENSUS:-istanbul} \
         --datadir $${DDIR} \
         --permissioned \
-        --nodiscover \
         --verbosity 5 \
         --networkid $${NETWORK_ID} \
         --ws \
@@ -132,7 +131,7 @@ x-tx-manager-def:
             {
               "app":"ThirdParty",
               "enabled": true,
-              "serverAddress": "http://$$(hostname -i):9080",
+              "serverAddress": "http://35.187.248.210:9080",
               "communicationType" : "REST"
             },
             {
@@ -144,7 +143,7 @@ x-tx-manager-def:
             {
               "app":"P2P",
               "enabled": true,
-              "serverAddress": "http://$$(hostname -i):9000",
+              "serverAddress": "http://35.187.248.210:9000",
               "sslConfig": {
                 "tls": "OFF"
               },
@@ -153,7 +152,10 @@ x-tx-manager-def:
             ],
             "peer": [
                {
-                   "url": "http://txmanager1:9000"
+                   "url": "http://35.187.248.210:9000"
+               },
+               {
+                   "url": "http://35.240.137.13:9000"
                }
             ],
             "keys": {
@@ -174,10 +176,10 @@ x-tx-manager-def:
         constellation)
           echo "socket=\"$${DDIR}/tm.ipc\"\npublickeys=[\"/examples/keys/tm$${NODE_ID}.pub\"]\n" > $${DDIR}/tm.conf
           constellation-node \
-            --url=http://$$(hostname -i):9000/ \
+            --url=http://35.187.248.210:9000/ \
             --port=9000 \
             --socket=$${DDIR}/tm.ipc \
-            --othernodes=http://172.16.239.101:9000/,http://172.16.239.102:9000/,http://172.16.239.103:9000/,http://172.16.239.104:9000/,http://172.16.239.105:9000/ \
+            --othernodes=http://35.187.248.210:9000/,http://35.240.137.13:9000/ \
             --publickeys=/examples/keys/tm$${NODE_ID}.pub \
             --privatekeys=/examples/keys/tm$${NODE_ID}.key \
             --storage=$${DDIR} \
@@ -195,6 +197,8 @@ services:
     ports:
       - "22000:8545"
       - "24000:9545"
+      - "50401:50401"
+      - "21000:21000"
     volumes:
       - vol1:/qdata
       - ./examples/7nodes:/examples:ro
@@ -203,29 +207,16 @@ services:
     environment:
       - PRIVATE_CONFIG=/qdata/tm/tm.ipc
       - NODE_ID=1
-    networks:
-      quorum-examples-net:
-        ipv4_address: 172.16.239.11
   txmanager1:
     << : *tx-manager-def
     hostname: txmanager1
     ports:
       - "9081:9080"
+      - "9000:9000"
     volumes:
       - vol1:/qdata
       - ./examples/7nodes:/examples:ro
-    networks:
-      quorum-examples-net:
-        ipv4_address: 172.16.239.101
     environment:
       - NODE_ID=1
-networks:
-  quorum-examples-net:
-    name: quorum-examples-net
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-      - subnet: 172.16.239.0/24
 volumes:
   "vol1":
