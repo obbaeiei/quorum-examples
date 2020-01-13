@@ -135,7 +135,7 @@ x-tx-manager-def:
             {
               "app":"ThirdParty",
               "enabled": true,
-              "serverAddress": "http://35.240.137.13:9080",
+              "serverAddress": "http://35.187.248.210:9080",
               "communicationType" : "REST"
             },
             {
@@ -147,7 +147,7 @@ x-tx-manager-def:
             {
               "app":"P2P",
               "enabled": true,
-              "serverAddress": "http://35.240.137.13:9000",
+              "serverAddress": "http://35.187.248.210:9000",
               "sslConfig": {
                 "tls": "OFF"
               },
@@ -156,10 +156,10 @@ x-tx-manager-def:
             ],
             "peer": [
                {
-                   "url": "http://35.187.248.210:9000"
+                   "url": "http://35.240.205.16:9000"
                },
                {
-                   "url": "http://35.240.137.13:9000"
+                   "url": "http://35.187.248.210:9000"
                }
             ],
             "keys": {
@@ -180,7 +180,7 @@ x-tx-manager-def:
         constellation)
           echo "socket=\"$${DDIR}/tm.ipc\"\npublickeys=[\"/examples/keys/tm$${NODE_ID}.pub\"]\n" > $${DDIR}/tm.conf
           constellation-node \
-            --url=http://35.240.137.13:9000/ \
+            --url=http://35.187.248.210:9000/ \
             --port=9000 \
             --socket=$${DDIR}/tm.ipc \
             --othernodes=http://35.187.248.210:9000/,http://35.240.137.13:9000/ \
